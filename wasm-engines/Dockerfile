@@ -1,10 +1,26 @@
-FROM ubuntu:19.04
+FROM ubuntu:19.10
 
 # System deps
 RUN apt-get clean
 RUN apt-get update
-RUN apt-get install -y software-properties-common git sudo build-essential wget curl nano \
-    autoconf automake libtool llvm-6.0 make ninja-build unzip zlib1g-dev texinfo libssl-dev
+RUN apt-get install -y software-properties-common gnupg1 cmake gcc-8 g++-8 \
+        libboost-all-dev git sudo build-essential wget curl \
+        ninja-build libssl-dev
+
+WORKDIR /engines
+
+RUN wget -qO - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+RUN apt update && apt install -y \
+	libllvm9 \
+	llvm-9 \
+	llvm-9-dev \
+	llvm-9-runtime \
+	libclang-common-9-dev # for yaml-bench
+
+RUN git clone https://github.com/second-state/SSVM.git
+RUN cd SSVM && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF .. && make
+
+RUN apt remove -y cmake
 
 # Install CMake
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4.tar.gz
@@ -34,8 +50,6 @@ RUN apt install -y clang-8 lldb-8 lld-8
 RUN ln -s /usr/bin/clang-8 /usr/bin/clang && \
     ln -s /usr/bin/clang++-8 /usr/bin/clang++
 
-WORKDIR /engines
-
 # install life
 RUN git clone --single-branch --branch bench-times https://github.com/cdetrio/life
 RUN cd life && go mod vendor
@@ -53,15 +67,26 @@ ENV PATH=/root/.cargo/bin:$PATH
 
 RUN rustup default 1.31.0
 
+RUN apt install -y gcc-8
+RUN apt install -y g++-8
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 10
+RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-8 10
+
 # install wasmi
 RUN git clone --single-branch --branch bench-time https://github.com/cdetrio/wasmi.git --recursive
 RUN cd wasmi && cargo test --release
 
 # Use old gcc/g++ for wavm (needed by wavm)
+RUN update-alternatives --remove-all gcc
+RUN update-alternatives --remove-all g++
 RUN apt install -y gcc-7
 RUN apt install -y g++-7
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-7 10
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-7 10
+
+# Downgrade LLVM
+RUN apt remove -y libllvm9 llvm-9 llvm-9-dev llvm-9-runtime libclang-common-9-dev
+RUN apt install -y llvm-6.0
 
 # install wavm
 RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/WAVM
@@ -146,9 +171,14 @@ COPY node-timer.js ./node/node-timer.js
 #RUN apt-get clean 
 #RUN rm -rf /var/cache/oracle-jdk${JAVA_VER}-installer
 
+ENV JAVA_VER 8
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+
+RUN apt-get install -y openjdk-8-jre
+
 # install asmble
-#RUN wget https://github.com/cdetrio/asmble/releases/download/0.4.2-fl-bench-times/asmble-0.4.2-fl-bench-times.tar
-#RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
+RUN wget https://github.com/cdetrio/asmble/releases/download/0.4.2-fl-bench-times/asmble-0.4.2-fl-bench-times.tar
+RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 
 # install wag
 #RUN apt-get install -y libcapstone-dev
@@ -176,7 +206,6 @@ RUN update-alternatives --remove-all gcc
 RUN update-alternatives --remove-all g++
 RUN apt install -y gcc-9
 RUN apt install -y g++-9
-
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 1
 RUN update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-9 1
 
