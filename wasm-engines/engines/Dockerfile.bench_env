@@ -1,0 +1,74 @@
+FROM ubuntu:19.10
+
+# System deps
+RUN apt-get clean
+RUN apt-get update
+RUN apt-get install -y software-properties-common git sudo build-essential wget curl nano \
+    autoconf automake libtool llvm-6.0 make ninja-build unzip zlib1g-dev texinfo libssl-dev
+
+# Install CMake
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4.tar.gz && \
+    tar -xzvf cmake-3.16.4.tar.gz && \
+    cd cmake-3.16.4 && \
+    ./bootstrap && make && make install && \
+    cd .. && \
+    rm -rf cmake-3.16.4.tar.gz
+
+# install python 2.7
+RUN apt-get install -y python2.7
+
+# install python 3.7
+RUN apt-get install -y python3.7
+RUN apt-get install -y python3-distutils
+RUN wget https://bootstrap.pypa.io/get-pip.py && python3.7 get-pip.py
+
+WORKDIR /engines
+
+# install rust
+RUN curl https://sh.rustup.rs -sSf | \
+    sh -s -- --default-toolchain stable -y && . $HOME/.cargo/env
+ENV PATH=/root/.cargo/bin:$PATH
+
+RUN rustup default 1.39.0
+
+# install python modules needed for benchmarking script
+RUN pip3 install click durationpy
+
+#RUN mkdir node
+RUN mkdir -p node && \
+    curl -fsSLO --compressed https://nodejs.org/dist/v11.10.0/node-v11.10.0-linux-x64.tar.gz && \
+    cd node && \
+    tar -xvf node-v11.10.0-linux-x64.tar.gz -C /usr/local/ --strip-components=1 --no-same-owner && \
+    ln -s /usr/local/bin/node ./node && \
+    cd .. && \
+    rm -rf node-v11-10.0-linux-x64.tar.gz
+
+COPY node-timer.js ./node/node-timer.js
+
+## install dependencies for standalone wasm prep
+RUN pip3 install jinja2 pandas
+
+# rust wasm32 target for compiling wasm
+RUN rustup target add wasm32-unknown-unknown
+
+# Install Go 1.11 (update 2019-03-16: now installs go 1.12)
+RUN add-apt-repository ppa:longsleep/golang-backports && apt-get update && apt-get install -y golang-go
+
+# enable go modules: https://github.com/golang/go/wiki/Modules
+RUN export GO111MODULE=on
+
+# TODO should be able to link everything below at runtime
+
+# copy benchmarking scripts
+RUN mkdir /benchrunner
+COPY wamr_aot.sh /engines/wasm-micro-runtime/
+COPY fizzy.sh /engines/fizzy/
+
+# copy scripts to generate standalone wasm modules
+RUN mkdir /benchprep
+
+RUN mkdir -p /benchmark_results_data
+
+WORKDIR /benchprep
+
+CMD /bin/bash

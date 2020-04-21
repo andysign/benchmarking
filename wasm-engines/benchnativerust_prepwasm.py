@@ -154,6 +154,8 @@ def saveResults(native_benchmarks, result_file):
             times_str = ", ".join(bench_times)
             writer.writerow({"test_name" : test_name, "elapsed_times" : times_str, "native_file_size" : test_results['exec_size']})
 
+def fill_and_run_rust_benchmarks():
+    pass
 
 def main():
     wasm_out_dir = args['wasmoutdir']
