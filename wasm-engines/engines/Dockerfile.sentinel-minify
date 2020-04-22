@@ -1,1 +1,14 @@
 FROM rust:1.39-stretch
+
+RUN rustup target add wasm32-unknown-unknown
+
+RUN git clone https://github.com/ewasm/sentinel-rs -b minify-tool --single-branc
+
+RUN cd sentinel-rs && \
+	rm -rf .cargo/config && \
+	cd wasm-utils/cli && \
+	cargo build  --release --bin wasm-minify && \
+	cp ../target/release/wasm-minify /usr/bin/
+
+FROM debian:stretch
+COPY --from=0 /usr/bin/wasm-minify /usr/bin/wasm-minify

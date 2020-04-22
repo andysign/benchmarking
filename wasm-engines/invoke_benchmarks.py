@@ -1,9 +1,45 @@
 import os
 
 output_dir = "output"
+wasm_minify_docker_image = 'wasm-minify'
+rust_docker_image = 'rust-build-env'
 
-def minify_wasm(test_vectors):
-    pass
+def minify_wasm(input_file, output_file):
+    mount_input_file = os.path.abspath(input_file) + ":/"
+    mount_output_file = os.path.abspath(output_file) + ":/"
+
+    docker_cmd = [
+            'docker',
+            'run',
+            '-v',
+            mount_input_file,
+            '-v',
+            mount_output_file,
+            wasm_minify_docker_image,
+            '/usrc/bin/wasm-minify'
+    ]
+
+    proc = subprocess.Popen(native_exec, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    return proc.wait(None)
+
+def build_rust(project_dir, output_file, build_target_wasm=False):
+    if build_target_wasm:
+        buld_target = "--target wasm32-unknown-unknown"
+
+    docker_cmd = [
+        'docker',
+        'run', 
+        '-v',
+        mount_project_dir,
+        '-v',
+        mount_output_file_dir,
+        '-t',
+        rust_docker_image,
+        '"cargo build {} --release /project_dir && cp /project_dir/target/wasm32-unknown-unknown/release/*.wasm /output/"'.format(build_target),
+    ]
+
+    proc = subprocess.Popen(docker_cmd, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True)
+    return proc.wait(None)
     
 def main():
     try:
