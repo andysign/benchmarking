@@ -17,8 +17,8 @@ RUN apt update && apt install -y \
 	llvm-9-runtime \
 	libclang-common-9-dev # for yaml-bench
 
-RUN git clone https://github.com/second-state/SSVM.git
-RUN cd SSVM && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF .. && make
+RUN git clone https://github.com/hugo-dc/SSVM.git --single-branch --branch bench
+RUN cd SSVM && git pull origin bench && mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF .. && make
 
 RUN apt remove -y cmake
 
@@ -101,6 +101,7 @@ RUN cd wavm-build && ninja
 
 
 ## wasmer superseded by wasmtime
+
 # install wasmer
 # download wasmer binary
 #RUN curl https://get.wasmer.io -sSfL | sh
@@ -113,6 +114,7 @@ RUN cd wavm-build && ninja
 #RUN cd wasmer && cargo build --release
 # bug where running wasmer v0.1.4 with python `Popen(stderr=subprocess.STDOUT)`
 # causes an error: `Runtime error: trap at 0x0 - illegal instruction`.
+
 # the fix is to run Popen without the stderr flag.
 #RUN rustup default nightly-2019-01-15
 #RUN git clone --single-branch --branch bench-compile-time https://github.com/cdetrio/wasmer.git wasmer-master
@@ -171,14 +173,9 @@ COPY node-timer.js ./node/node-timer.js
 #RUN apt-get clean 
 #RUN rm -rf /var/cache/oracle-jdk${JAVA_VER}-installer
 
-ENV JAVA_VER 8
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
-
-RUN apt-get install -y openjdk-8-jre
-
 # install asmble
-RUN wget https://github.com/cdetrio/asmble/releases/download/0.4.2-fl-bench-times/asmble-0.4.2-fl-bench-times.tar
-RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
+#RUN wget https://github.com/cdetrio/asmble/releases/download/0.4.2-fl-bench-times/asmble-0.4.2-fl-bench-times.tar
+#RUN tar -xvf asmble-0.4.2-fl-bench-times.tar
 
 # install wag
 #RUN apt-get install -y libcapstone-dev
