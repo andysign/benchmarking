@@ -1,8 +1,8 @@
 model name	: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz
-cpu MHz		: 700.029
+cpu MHz		: 600.014
 model name	: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz
-cpu MHz		: 700.004
+cpu MHz		: 600.006
 model name	: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz
-cpu MHz		: 700.029
+cpu MHz		: 600.004
 model name	: Intel(R) Core(TM) i5-7200U CPU @ 2.50GHz
-cpu MHz		: 700.001
+cpu MHz		: 600.023
