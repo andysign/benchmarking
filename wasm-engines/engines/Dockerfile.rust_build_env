@@ -1,0 +1,11 @@
+FROM rust:1.39-stretch
+
+# TODO add uid/gid as parameters to build the image
+
+RUN mkdir /home/rustboi && \
+    groupadd -g 1000 rustboi && \
+    useradd -g 1000 -u 1000 rustboi && \
+    chown rustboi:rustboi /home/rustboi
+
+ENV CARGO_HOME=/home/rustboi/.cargo
+USER rustboi
