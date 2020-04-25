@@ -154,19 +154,12 @@ def saveResults(native_benchmarks, result_file):
             times_str = ", ".join(bench_times)
             writer.writerow({"test_name" : test_name, "elapsed_times" : times_str, "native_file_size" : test_results['exec_size']})
 
-def fill_and_run_rust_benchmarks():
-    pass
-
-def main():
-    wasm_out_dir = args['wasmoutdir']
-    csv_file_path = args['csvresults']
-    rust_code_dir = args['rustcodedir']
-    input_vectors_dir = args['inputvectorsdir']
+def build_and_bench_rust_wasm_and_native(wasm_out_dir, csv_file_path, rust_code_dir, input_vectors_dir, limit_benchmark_algos=None):
     rustcodes = [dI for dI in os.listdir(rust_code_dir) if os.path.isdir(os.path.join(rust_code_dir,dI))]
     #benchdirs = [dI for dI in os.listdir('./') if os.path.isdir(os.path.join('./',dI))]
     native_benchmarks = {}
     for benchname in rustcodes:
-        if benchname in ["__pycache__"]:
+        if benchname in ["__pycache__"] or limit_benchmark_algos and not benchname in limit_benchmark_algos:
             continue
         print("start benching: ", benchname)
 
@@ -179,6 +172,9 @@ def main():
             bench_inputs = json.load(f)
 
             for input in bench_inputs:
+                if benchname in limit_benchmark_algos and not input['name'] in limit_benchmark_algos[benchname]:
+                    continue
+
                 print("bench input:", input['name'])
                 native_input_times = do_rust_bench(benchname, input, rust_code_dir, wasm_out_dir)
                 if native_input_times:
@@ -190,6 +186,3 @@ def main():
 
     print("got native_benchmarks:", native_benchmarks)
     saveResults(native_benchmarks, csv_file_path)
-
-if __name__ == "__main__":
-    main()
